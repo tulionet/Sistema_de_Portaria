@@ -14,12 +14,10 @@ import javafx.geometry.Pos;
 public class App extends Application {
 
     public enum UserType {
-        ADMINISTRATOR, PORTEIRO
+        ADMINISTRADOR, PORTEIRO
     }
 
-    private String porteiroNome;
-    private int userId;
-    private UserType userType; // Adicione o tipo de usuário
+    private UserType userType;
 
     public static void main(String[] args) {
         launch(args);
@@ -48,22 +46,25 @@ public class App extends Application {
             String username = usernameField.getText();
             String password = passwordField.getText();
 
-            // Verifique a autenticação no banco de dados
-            String nomeUsuarioAutenticado = authenticate(username, password);
-            if (nomeUsuarioAutenticado != null) {
-                // Determine o tipo de usuário com base nas informações de autenticação
-                if (username.equals("admin")) {
-                    setUserType(UserType.ADMINISTRATOR);
-                } else {
+            // Autenticação Banco de dados
+            User user = authenticate(username, password);
+            if (user != null) {
+                if (user.getTipo() == 1) {
+                    setUserType(UserType.ADMINISTRADOR);
+                } else if (user.getTipo() == 2) {
                     setUserType(UserType.PORTEIRO);
+                } else {
+                    // Proximos valores
                 }
-                Main main = new Main();
+
+                Main main = new Main(userType, user.getNome());
                 Stage mainStage = new Stage();
                 main.start(mainStage);
                 primaryStage.close(); // Fecha a tela de login
             } else {
                 showAlert("Falha na autenticação. Verifique suas credenciais.");
             }
+            
         });
 
         vbox.getChildren().addAll(titleLabel, usernameField, passwordField, loginButton);
@@ -73,47 +74,31 @@ public class App extends Application {
         primaryStage.show();
     }
 
-    private String authenticate(String username, String password) {
-        String sql = "SELECT Nome FROM Usuarios WHERE Usuario = ? AND Senha = ?";
-
+    private User authenticate(String username, String password) {
+        String sql = "SELECT * FROM Usuarios WHERE Usuario = ? AND Senha = ?";
+    
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+    
             preparedStatement.setString(1, username);
             preparedStatement.setString(2, password);
-
+    
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
-                return resultSet.getString("Nome");
+                int id = resultSet.getInt("ID");
+                String nome = resultSet.getString("Nome");
+                int tipo = resultSet.getInt("Tipo");
+    
+                User user = new User(id, nome, tipo);
+    
+                return user;
             } else {
                 return null; // Autenticação falhou
             }
-
+    
         } catch (SQLException e) {
             e.printStackTrace();
             return null; // Autenticação falhou devido a um erro
-        }
-    }
-
-    // Método para obter o ID do usuário com base no nome de usuário
-    private int getUserIdByUsername(String username) {
-        String sql = "SELECT ID FROM Usuarios WHERE Usuario = ?";
-        
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            preparedStatement.setString(1, username);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                return resultSet.getInt("ID");
-            } else {
-                return -1; // Usuário não encontrado
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return -1; // Ocorreu um erro ao buscar o ID do usuário
         }
     }
 
@@ -126,15 +111,7 @@ public class App extends Application {
         alert.showAndWait();
     }
 
-    // Getter para o nome do porteiro
-    public String getPorteiroNome() {
-        return porteiroNome;
-    }
 
-    // Getter para o ID do porteiro
-    public int getUserId() {
-        return userId;
-    }
 
     public void setUserType(UserType userType) {
         this.userType = userType;
@@ -143,5 +120,30 @@ public class App extends Application {
     public UserType getUserType() {
         return userType;
     }
+
+    public class User {
+        private int id;
+        private String nome;
+        private int tipo;
+    
+        public User(int id, String nome, int tipo) {
+            this.id = id;
+            this.nome = nome;
+            this.tipo = tipo;
+        }
+    
+        public int getId() {
+            return id;
+        }
+    
+        public String getNome() {
+            return nome;
+        }
+    
+        public int getTipo() {
+            return tipo;
+        }
+    }
+    
 }
 

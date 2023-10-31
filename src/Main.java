@@ -8,12 +8,13 @@ import javafx.geometry.Pos;
 
 public class Main extends Application {
 
-    public enum UserType {
-        ADMINISTRATOR, PORTEIRO
-    }
-    
+    private App.UserType tipo;
+    private String porteiroNome;
 
-    private boolean hasSpecialPermissions; // Flag para verificar permissões especiais
+    public Main(App.UserType userType, String porteiroNome) {
+        this.tipo = userType;
+        this.porteiroNome = porteiroNome;
+    }
 
     public static void main(String[] args) {
         launch(args);
@@ -27,29 +28,27 @@ public class Main extends Application {
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(20));
 
-        App app = new App();
-        String porteiroNome = app.getPorteiroNome();
-        int userId = app.getUserId();
-
-        // Exiba o nome do porteiro obtido do campo
         Label nameLabel = new Label("Bem-vindo, " + porteiroNome);
         nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        // Adicione botões para Entrada de Nota Fiscal e Entrada de Visitante
+
         Button nfButton = new Button("Entrada Nota Fiscal");
         Button visitorButton = new Button("Entrada Visitante");
 
-        // Crie botões de Cadastro de Usuário e Edição de Usuário
         Button cadastroUsuarioButton = new Button("Cadastro de Usuário");
         Button editUsuarioButton = new Button("Edição de Usuário");
 
-        // Defina a visibilidade dos botões com base nas permissões do usuário
-        if (hasSpecialPermissions) {
+        Button logoffButton = new Button("Logoff");
+
+        // Defina a visibilidade dos botões com base no tipo de usuário
+        if (tipo == App.UserType.ADMINISTRADOR) {
             cadastroUsuarioButton.setVisible(true);
             editUsuarioButton.setVisible(true);
-        } else {
+        } else if (tipo == App.UserType.PORTEIRO) {
             cadastroUsuarioButton.setVisible(false);
             editUsuarioButton.setVisible(false);
+        }else {
+            // Proximos valores
         }
         // Tela de notas fiscais
         nfButton.setOnAction(e -> {
@@ -71,22 +70,19 @@ public class Main extends Application {
             EditUser editUser = new EditUser();
             editUser.start(new Stage());
         });
+        // Botão de Logoff
+        logoffButton.setOnAction(e -> {
+            App app = new App();
+            app.start(new Stage());
+            primaryStage.close();
+        });
 
-        vbox.getChildren().addAll(nameLabel, nfButton, visitorButton, cadastroUsuarioButton, editUsuarioButton);
+        vbox.getChildren().addAll(nameLabel, nfButton, visitorButton, cadastroUsuarioButton, editUsuarioButton, logoffButton);
 
         Scene scene = new Scene(vbox, 300, 250);
         primaryStage.setScene(scene);
         primaryStage.show();
         
-        // Defina as permissões especiais com base no userId
-        if (userId == 1) {
-            setHasSpecialPermissions(true);
-        } else {
-            setHasSpecialPermissions(false);
-        }
     }
 
-    public void setHasSpecialPermissions(boolean hasSpecialPermissions) {
-        this.hasSpecialPermissions = hasSpecialPermissions;
-    }
 }
