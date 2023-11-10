@@ -9,11 +9,10 @@ import javafx.geometry.Pos;
 public class Main extends Application {
 
     private App.UserType tipo;
-    private String porteiroNome;
+    User user;
 
-    public Main(App.UserType userType, String porteiroNome) {
-        this.tipo = userType;
-        this.porteiroNome = porteiroNome;
+    public Main(User user) {
+        this.user = user;
     }
 
     public static void main(String[] args) {
@@ -23,14 +22,12 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Tela Principal");
-
         VBox vbox = new VBox(10);
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(20));
 
-        Label nameLabel = new Label("Bem-vindo, " + porteiroNome);
+        Label nameLabel = new Label("Bem-vindo, " + user.getNome() );
         nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-
 
         Button nfButton = new Button("Entrada Nota Fiscal");
         Button visitorButton = new Button("Entrada Visitante");
@@ -39,6 +36,7 @@ public class Main extends Application {
         Button editUsuarioButton = new Button("Edição de Usuário");
 
         Button logoffButton = new Button("Logoff");
+
 
         // Defina a visibilidade dos botões com base no tipo de usuário
         if (tipo == App.UserType.ADMINISTRADOR) {
@@ -50,25 +48,30 @@ public class Main extends Application {
         }else {
             // Proximos valores
         }
+
         // Tela de notas fiscais
         nfButton.setOnAction(e -> {
-            NFSelect nfSelect = new NFSelect();
+            NFSelect nfSelect = new NFSelect(user.getId());
             nfSelect.start(new Stage());
+
         });
         // Tela de Visitantes
         visitorButton.setOnAction(e -> {
             VisitorSelect visitorSelect = new VisitorSelect();
             visitorSelect.start(new Stage());
+
         });
         // Tela de Cadastro de usuário
         cadastroUsuarioButton.setOnAction(e -> {
             CadastroUser cadastroUser = new CadastroUser();
             cadastroUser.start(new Stage());
+
         });
         // Tela de edição de usuário
         editUsuarioButton.setOnAction(e -> {
             EditUser editUser = new EditUser();
             editUser.start(new Stage());
+
         });
         // Botão de Logoff
         logoffButton.setOnAction(e -> {
@@ -82,7 +85,5 @@ public class Main extends Application {
         Scene scene = new Scene(vbox, 300, 250);
         primaryStage.setScene(scene);
         primaryStage.show();
-        
     }
-
 }

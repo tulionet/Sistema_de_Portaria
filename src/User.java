@@ -5,12 +5,14 @@ public class User {
     private final SimpleStringProperty nome;
     private final SimpleStringProperty usuario;
     private final SimpleStringProperty senha;
+    private final int tipo;
 
-    public User(int id, String nome, String usuario, String senha) {
+    public User(int id, String nome, String usuario, String senha, int tipo) {
         this.id = id;
         this.nome = new SimpleStringProperty(nome);
         this.usuario = new SimpleStringProperty(usuario);
         this.senha = new SimpleStringProperty(senha);
+        this.tipo = tipo;
     }
 
     public String getNome() {
@@ -38,6 +40,10 @@ public class User {
     }
 
     public int getId() {
-        return 0;
+        return id;
+    }
+
+    public int getTipo() {
+        return tipo;
     }
 }

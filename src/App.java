@@ -12,12 +12,13 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 
 public class App extends Application {
-
+    // Tipos de usuário
     public enum UserType {
         ADMINISTRADOR, PORTEIRO
     }
 
     private UserType userType;
+    private User user; 
 
     public static void main(String[] args) {
         launch(args);
@@ -25,6 +26,7 @@ public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        
         primaryStage.setTitle("Login");
 
         VBox vbox = new VBox(10);
@@ -47,20 +49,20 @@ public class App extends Application {
             String password = passwordField.getText();
 
             // Autenticação Banco de dados
-            User user = authenticate(username, password);
+             user = authenticate(username, password);
+            
             if (user != null) {
-                if (user.getTipo() == 1) {
-                    setUserType(UserType.ADMINISTRADOR);
-                } else if (user.getTipo() == 2) {
-                    setUserType(UserType.PORTEIRO);
-                } else {
-                    // Proximos valores
+                switch (user.getTipo()) {
+                    
+                    case 1: setUserType(UserType.ADMINISTRADOR); break;
+                    case 2: setUserType(UserType.PORTEIRO); break;
+                    // case 3: Proximos Valores
+                    default:setUserType(UserType.PORTEIRO); break;
                 }
-
-                Main main = new Main(userType, user.getNome());
+                Main main = new Main(user);
                 Stage mainStage = new Stage();
                 main.start(mainStage);
-                primaryStage.close(); // Fecha a tela de login
+                primaryStage.close();
             } else {
                 showAlert("Falha na autenticação. Verifique suas credenciais.");
             }
@@ -76,7 +78,6 @@ public class App extends Application {
 
     private User authenticate(String username, String password) {
         String sql = "SELECT * FROM Usuarios WHERE Usuario = ? AND Senha = ?";
-    
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
     
@@ -89,20 +90,19 @@ public class App extends Application {
                 String nome = resultSet.getString("Nome");
                 int tipo = resultSet.getInt("Tipo");
     
-                User user = new User(id, nome, tipo);
-    
-                return user;
+                User User = new User(id, nome, username, password, tipo);
+
+                return User;
             } else {
-                return null; // Autenticação falhou
+                return null;
             }
     
         } catch (SQLException e) {
             e.printStackTrace();
-            return null; // Autenticação falhou devido a um erro
+            return null;
         }
     }
 
-    // Método para mostrar um alerta de erro
     private void showAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Erro");
@@ -111,9 +111,7 @@ public class App extends Application {
         alert.showAndWait();
     }
 
-
-
-    public void setUserType(UserType userType) {
+    private void setUserType(UserType userType) {
         this.userType = userType;
     }
 
@@ -121,29 +119,10 @@ public class App extends Application {
         return userType;
     }
 
-    public class User {
-        private int id;
-        private String nome;
-        private int tipo;
-    
-        public User(int id, String nome, int tipo) {
-            this.id = id;
-            this.nome = nome;
-            this.tipo = tipo;
-        }
-    
-        public int getId() {
-            return id;
-        }
-    
-        public String getNome() {
-            return nome;
-        }
-    
-        public int getTipo() {
-            return tipo;
-        }
+    public User getUser(){
+        return this.user;
+        
     }
-    
 }
+
 

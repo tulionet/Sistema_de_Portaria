@@ -32,6 +32,7 @@ public class NFSelect extends Application {
     private TextField cpfFilter;
     private TextField empresaFilter;
     private TextField placaCarroFilter;
+    private TextField porteiroRespFilter;
 
     private TableView<NF> nfTable;
     private ObservableList<NF> nfList;
@@ -39,6 +40,12 @@ public class NFSelect extends Application {
     private Button entradaButton;
     private Button saidaButton;
     private Button filtrarButton;
+    private Button voltarButton;
+
+    private int id;
+    public NFSelect(int id) {
+        this.id = id;
+    }
 
     public static void main(String[] args) {
         launch(args);
@@ -48,7 +55,6 @@ public class NFSelect extends Application {
     public void start(Stage stage) {
         stage.setTitle("Sistema de Entrada e Saída de NF");
 
-        // Campos de entrada
         nomeField = new TextField();
         cpfField = new TextField();
         placaCarroField = new TextField();
@@ -61,10 +67,10 @@ public class NFSelect extends Application {
         Label empresaLabel = new Label("Empresa:");
         Label nfLabel = new Label("NF:");
 
-        // Botões para registro de entrada e saída
         entradaButton = new Button("Entrada NotaFiscal");
         saidaButton = new Button("Saída NotaFiscal");
         filtrarButton = new Button("Filtrar");
+        voltarButton = new Button("Voltar à tela Principal");
 
         entradaButton.setOnAction(e -> {
             registerNF("Entrada");
@@ -78,7 +84,10 @@ public class NFSelect extends Application {
             showFilterDialog();
         });
 
-        // Layout dos campos de entrada
+        voltarButton.setOnAction(e -> {
+            stage.close();
+        });
+
         GridPane inputGrid = new GridPane();
         inputGrid.setHgap(10);
         inputGrid.setVgap(10);
@@ -88,17 +97,13 @@ public class NFSelect extends Application {
         inputGrid.addRow(3, empresaLabel, empresaField);
         inputGrid.addRow(4, nfLabel, nfField);
 
-        // Layout dos botões
-        HBox buttonBox = new HBox(10, entradaButton, saidaButton, filtrarButton);
+        HBox buttonBox = new HBox(10, entradaButton, saidaButton, filtrarButton, voltarButton);
 
-        // Layout da tela
         VBox layout = new VBox(20);
         layout.getChildren().addAll(inputGrid, buttonBox);
 
-        // Configurar a tabela de NF
         configureTable();
 
-        // Inicialmente, a lista da tabela estará vazia
         nfList = FXCollections.observableArrayList();
         nfTable.setItems(nfList);
 
@@ -109,7 +114,6 @@ public class NFSelect extends Application {
         stage.show();
     }
 
-    // Obter dados dos campos de entrada
     private void registerNF(String situacao) {
         String nome = nomeField.getText();
         String cpf = cpfField.getText();
@@ -117,26 +121,23 @@ public class NFSelect extends Application {
         String empresa = empresaField.getText();
         String nf = nfField.getText();
 
-        // Verificar se todos os campos estão preenchidos
         if (nome.isEmpty() || cpf.isEmpty() || placaCarro.isEmpty() || empresa.isEmpty() || nf.isEmpty()) {
-            showAlert("Todos os campos devem ser preenchidos.");
+            showAlertWRG("Todos os campos devem ser preenchidos.");
             return;
         }
 
-        // Verificar CPF e Placa do Carro válidos (você pode implementar as validações)
         if (!isValidCPF(cpf) || !isValidPlaca(placaCarro)) {
-            showAlert("CPF inválido ou placa de carro inválida.");
+            showAlertWRG("CPF inválido ou placa de carro inválida.");
             return;
         }
 
-        // Adicionar a NF à tabela com a situação especificada
         addNFToDatabase(situacao, nf, nome, cpf, empresa, placaCarro);
         clearFields();
-        showAlert("NF registrada com sucesso como " + situacao);
+        showAlertOK("NF registrada com sucesso como " + situacao);
     }
 
     private void addNFToDatabase(String situacao, String nf, String nome, String cpf, String empresa, String placaCarro) {
-        String sql = "INSERT INTO NFs (Situacao, NF, Nome, CPF, Empresa, PlacaCarro, DataHora) VALUES (?, ?, ?, ?, ?, ?, GETDATE())";
+        String sql = "INSERT INTO NFs (Situacao, NF, Nome, CPF, Empresa, PlacaCarro, porteiroResp, DataHora) VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE())";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -147,11 +148,15 @@ public class NFSelect extends Application {
             preparedStatement.setString(4, cpf);
             preparedStatement.setString(5, empresa);
             preparedStatement.setString(6, placaCarro);
+            preparedStatement.setInt(7, id);
+            
+
+
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
-            showAlert("Erro ao inserir NF no banco de dados: " + e.getMessage());
+            showAlertErr("Erro ao inserir NF no banco de dados: " + e.getMessage());
         }
     }
 
@@ -159,7 +164,6 @@ public class NFSelect extends Application {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Filtrar Dados");
 
-        // Crie campos de entrada para filtragem
         dataHoraFilter = new TextField();
         situacaoFilter = new TextField();
         nfFilter = new TextField();
@@ -168,7 +172,7 @@ public class NFSelect extends Application {
         empresaFilter = new TextField();
         placaCarroFilter = new TextField();
 
-        // Defina os rótulos para os campos de filtragem
+
         dataHoraFilter.setPromptText("Data e Hora");
         situacaoFilter.setPromptText("Situação");
         nfFilter.setPromptText("NF");
@@ -177,7 +181,7 @@ public class NFSelect extends Application {
         empresaFilter.setPromptText("Empresa");
         placaCarroFilter.setPromptText("Placa do Carro");
 
-        // Crie um layout para os campos de filtragem
+
         GridPane filterGrid = new GridPane();
         filterGrid.setHgap(10);
         filterGrid.setVgap(10);
@@ -189,20 +193,18 @@ public class NFSelect extends Application {
         filterGrid.addRow(5, new Label("Empresa:"), empresaFilter);
         filterGrid.addRow(6, new Label("Placa do Carro:"), placaCarroFilter);
 
+
         dialog.getDialogPane().setContent(filterGrid);
 
-        // Adicione os botões "Filtrar", "Voltar" e "Avançar"
         ButtonType filtrarButtonType = new ButtonType("Filtrar", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(filtrarButtonType, ButtonType.CANCEL);
 
-        // Configurar ação para o botão "Filtrar"
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == filtrarButtonType) {
                 loadNFsFromDatabaseWithFilter();
             }
             return null;
         });
-
         dialog.showAndWait();
     }
 
@@ -230,7 +232,10 @@ public class NFSelect extends Application {
         TableColumn<NF, String> placaCarroColumn = new TableColumn<>("Placa do Carro");
         placaCarroColumn.setCellValueFactory(new PropertyValueFactory<>("placaCarro"));
 
-        nfTable.getColumns().addAll(dataHoraColumn, situacaoColumn, nfColumn, nomeColumn, cpfColumn, empresaColumn, placaCarroColumn);
+        TableColumn<NF, String> porteiroResp = new TableColumn<>("Responsável");
+        porteiroResp.setCellValueFactory(new PropertyValueFactory<>("porteiroResp"));
+
+        nfTable.getColumns().addAll(dataHoraColumn, situacaoColumn, nfColumn, nomeColumn, cpfColumn, empresaColumn, placaCarroColumn, porteiroResp);
     }
 
     public static class NF {
@@ -241,8 +246,9 @@ public class NFSelect extends Application {
         private final SimpleStringProperty cpf;
         private final SimpleStringProperty empresa;
         private final SimpleStringProperty placaCarro;
+        private final SimpleStringProperty porteiroResp;
 
-        public NF(String dataHora, String situacao, String nf, String nome, String cpf, String empresa, String placaCarro) {
+        public NF(String dataHora, String situacao, String nf, String nome, String cpf, String empresa, String placaCarro, String porteiroResp) {
             this.dataHora = new SimpleStringProperty(dataHora);
             this.situacao = new SimpleStringProperty(situacao);
             this.nf = new SimpleStringProperty(nf);
@@ -250,6 +256,7 @@ public class NFSelect extends Application {
             this.cpf = new SimpleStringProperty(cpf);
             this.empresa = new SimpleStringProperty(empresa);
             this.placaCarro = new SimpleStringProperty(placaCarro);
+            this.porteiroResp = new SimpleStringProperty(porteiroResp);
         }
 
         public String getDataHora() {
@@ -279,11 +286,30 @@ public class NFSelect extends Application {
         public String getPlacaCarro() {
             return placaCarro.get();
         }
-    }
 
-    private void showAlert(String message) {
+        public String getporteiroResp() {
+            return porteiroResp.get();
+        }
+    }
+     private void showAlertErr(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Erro");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showAlertWRG(String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Atenção");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+      private void showAlertOK(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Confirmação");
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
@@ -306,7 +332,8 @@ public class NFSelect extends Application {
     }
 
     private void loadNFsFromDatabaseWithFilter() {
-        String sql = "SELECT * FROM NFs WHERE " +
+        String sql =  
+                "SELECT * FROM NFs WHERE " +
                 "DataHora LIKE ? AND " +
                 "Situacao LIKE ? AND " +
                 "NF LIKE ? AND " +
@@ -339,16 +366,16 @@ public class NFSelect extends Application {
                 String cpf = resultSet.getString("CPF");
                 String empresa = resultSet.getString("Empresa");
                 String placaCarro = resultSet.getString("PlacaCarro");
+                String porteiroResp = resultSet.getString("porteiroResp");
 
-                filteredNFList.add(new NF(dataHora, situacao, nf, nome, cpf, empresa, placaCarro));
+                filteredNFList.add(new NF(dataHora, situacao, nf, nome, cpf, empresa, placaCarro, porteiroResp));
             }
 
             nfList.setAll(filteredNFList);
 
         } catch (SQLException e) {
             e.printStackTrace();
-            showAlert("Erro ao carregar dados do banco de dados: " + e.getMessage());
+            showAlertErr("Erro ao carregar dados do banco de dados: " + e.getMessage());
         }
     }
-
 }

@@ -6,6 +6,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import java.sql.Connection;
@@ -19,7 +20,7 @@ public class EditUser extends Application {
     private User selectedUser;
     private TextField nomeField;
     private PasswordField senhaField;
-
+  
     public static void main(String[] args) {
         launch(args);
     }
@@ -47,8 +48,52 @@ public class EditUser extends Application {
 
         TableColumn<User, String> senhaColumn = new TableColumn<>("Senha");
         senhaColumn.setCellValueFactory(new PropertyValueFactory<>("senha"));
+        senhaColumn.setCellFactory(TextFieldTableCell.forTableColumn());
 
-        userTable.getColumns().addAll(nomeColumn, usuarioColumn, senhaColumn);
+        TableColumn<User, Integer> tipoColumn = new TableColumn<>("Tipo");
+        tipoColumn.setCellValueFactory(new PropertyValueFactory<>("tipo"));
+
+        userTable.getColumns().addAll(nomeColumn, usuarioColumn, senhaColumn, tipoColumn);
+
+        senhaColumn.setCellFactory(column -> {
+            TableCell<User, String> cell = new TableCell<User, String>() {
+                @Override
+                protected void updateItem(String senha, boolean empty) {
+                    super.updateItem(senha, empty);
+
+                    if (senha == null || empty) {
+                        setText(null);
+                    } else {
+                        // Exibe 5 asteriscos
+                        setText("*****");
+                    }
+                }
+            };
+            return cell;
+        });       
+        
+        tipoColumn.setCellFactory(column -> new TableCell<User, Integer>() {
+            @Override
+            protected void updateItem(Integer tipo, boolean empty) {
+                super.updateItem(tipo, empty);
+        
+                if (tipo == null || empty) {
+                    setText(null);
+                } else if (tipo == 1) {
+                    setText("Administrador");
+                } else if (tipo == 2) {
+                    setText("Porteiro");
+                }
+            }
+        });
+        
+        
+                
+                
+        
+        
+        
+        
 
         nomeField = new TextField();
         nomeField.setPromptText("Nome");
@@ -59,21 +104,19 @@ public class EditUser extends Application {
         Button confirmarButton = new Button("Confirmar");
         confirmarButton.setOnAction(e -> atualizarUsuario());
 
-        Button filtrarButton = new Button("Filtrar");
-        filtrarButton.setOnAction(e -> filtrarUsuario());
+        Button alterarButton = new Button("Alterar");
+        alterarButton.setOnAction(e -> alterarUsuario());
 
-        vbox.getChildren().addAll(titleLabel, userTable, nomeField, senhaField, filtrarButton, confirmarButton);
+        vbox.getChildren().addAll(titleLabel, userTable, nomeField, senhaField, alterarButton, confirmarButton);
 
         Scene scene = new Scene(vbox, 500, 400);
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        // Preenche a tabela com os dados dos usuários do banco de dados
         preencherTabelaUsuarios();
     }
 
     private void preencherTabelaUsuarios() {
-        // Conecta ao banco de dados e recupera os dados da tabela Usuarios
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM Usuarios");
              ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -85,21 +128,20 @@ public class EditUser extends Application {
                 String nome = resultSet.getString("Nome");
                 String usuario = resultSet.getString("Usuario");
                 String senha = resultSet.getString("Senha");
+                int tipo = resultSet.getInt("Tipo");
 
-                User user = new User(id, nome, usuario, senha);
+                User user = new User(id, nome, usuario, senha, tipo);
                 users.add(user);
             }
-
             userTable.setItems(users);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private void filtrarUsuario() {
+    private void alterarUsuario() {
         User selected = userTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            // Preenche automaticamente o nome e a senha com os dados do usuário selecionado
             nomeField.setText(selected.getNome());
             senhaField.setText(selected.getSenha());
             selectedUser = selected;
@@ -108,33 +150,27 @@ public class EditUser extends Application {
 
     private void atualizarUsuario() {
         if (selectedUser != null) {
-            // Obtém os novos valores dos campos de nome e senha
             String novoNome = nomeField.getText();
             String novaSenha = senhaField.getText();
             String usuario = selectedUser.getUsuario();
 
-            // Atualiza o usuário no banco de dados com as novas informações com base no nome de usuário
             atualizarUsuarioNoBanco(usuario, novoNome, novaSenha);
 
-            // Exibe uma mensagem de confirmação
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Edição de Usuário");
             alert.setHeaderText(null);
             alert.setContentText("Usuário editado com sucesso!");
             alert.showAndWait();
 
-            // Limpa os campos e a seleção
             nomeField.clear();
             senhaField.clear();
             selectedUser = null;
 
-            // Atualiza a tabela com os dados atualizados do banco de dados
             preencherTabelaUsuarios();
         }
     }
 
     private void atualizarUsuarioNoBanco(String usuario, String novoNome, String novaSenha) {
-        // Atualiza o usuário no banco de dados com as novas informações com base no nome de usuário
         String sql = "UPDATE Usuarios SET Nome = ?, Senha = ? WHERE Usuario = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();

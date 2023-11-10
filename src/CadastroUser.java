@@ -71,7 +71,6 @@ public class CadastroUser extends Application {
         });
 
         voltarButton.setOnAction(e -> {
-            // Fecha a janela de cadastro e retorna à tela principal
             stage.close();
         });
 
