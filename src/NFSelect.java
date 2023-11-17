@@ -8,11 +8,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,9 +38,9 @@ public class NFSelect extends Application {
     private Button filtrarButton;
     private Button voltarButton;
 
-    private int id;
-    public NFSelect(int id) {
-        this.id = id;
+    private User user;
+    public NFSelect(User user) {
+        this.user = user;
     }
 
     public static void main(String[] args) {
@@ -148,10 +144,7 @@ public class NFSelect extends Application {
             preparedStatement.setString(4, cpf);
             preparedStatement.setString(5, empresa);
             preparedStatement.setString(6, placaCarro);
-            preparedStatement.setInt(7, id);
-            
-
-
+            preparedStatement.setInt(7, user.getId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -171,7 +164,7 @@ public class NFSelect extends Application {
         cpfFilter = new TextField();
         empresaFilter = new TextField();
         placaCarroFilter = new TextField();
-
+        porteiroRespFilter = new TextField();
 
         dataHoraFilter.setPromptText("Data e Hora");
         situacaoFilter.setPromptText("Situação");
@@ -180,18 +173,19 @@ public class NFSelect extends Application {
         cpfFilter.setPromptText("CPF");
         empresaFilter.setPromptText("Empresa");
         placaCarroFilter.setPromptText("Placa do Carro");
-
+        porteiroRespFilter.setPromptText("Responsável");
 
         GridPane filterGrid = new GridPane();
         filterGrid.setHgap(10);
         filterGrid.setVgap(10);
-        filterGrid.addRow(0, new Label("Data e Hora:"), dataHoraFilter);
-        filterGrid.addRow(1, new Label("Situação:"), situacaoFilter);
-        filterGrid.addRow(2, new Label("NF:"), nfFilter);
-        filterGrid.addRow(3, new Label("Nome:"), nomeFilter);
-        filterGrid.addRow(4, new Label("CPF:"), cpfFilter);
-        filterGrid.addRow(5, new Label("Empresa:"), empresaFilter);
-        filterGrid.addRow(6, new Label("Placa do Carro:"), placaCarroFilter);
+        filterGrid.addRow(1, new Label("Data e Hora:"), dataHoraFilter);
+        filterGrid.addRow(2, new Label("Situação:"), situacaoFilter);
+        filterGrid.addRow(3, new Label("NF:"), nfFilter);
+        filterGrid.addRow(4, new Label("Nome:"), nomeFilter);
+        filterGrid.addRow(5, new Label("CPF:"), cpfFilter);
+        filterGrid.addRow(6, new Label("Empresa:"), empresaFilter);
+        filterGrid.addRow(7, new Label("Placa do Carro:"), placaCarroFilter);
+        filterGrid.addRow(8, new Label("Responsável:"), porteiroRespFilter);
 
 
         dialog.getDialogPane().setContent(filterGrid);
@@ -232,10 +226,10 @@ public class NFSelect extends Application {
         TableColumn<NF, String> placaCarroColumn = new TableColumn<>("Placa do Carro");
         placaCarroColumn.setCellValueFactory(new PropertyValueFactory<>("placaCarro"));
 
-        TableColumn<NF, String> porteiroResp = new TableColumn<>("Responsável");
-        porteiroResp.setCellValueFactory(new PropertyValueFactory<>("porteiroResp"));
+        TableColumn<NF, String> porteiroRespColumn = new TableColumn<>("Responsável");
+        porteiroRespColumn.setCellValueFactory(new PropertyValueFactory<>("porteiroResp"));
 
-        nfTable.getColumns().addAll(dataHoraColumn, situacaoColumn, nfColumn, nomeColumn, cpfColumn, empresaColumn, placaCarroColumn, porteiroResp);
+        nfTable.getColumns().addAll(dataHoraColumn, situacaoColumn, nfColumn, nomeColumn, cpfColumn, empresaColumn, placaCarroColumn, porteiroRespColumn);
     }
 
     public static class NF {
@@ -287,11 +281,12 @@ public class NFSelect extends Application {
             return placaCarro.get();
         }
 
-        public String getporteiroResp() {
+        public String getPorteiroResp() {
             return porteiroResp.get();
         }
     }
-     private void showAlertErr(String message) {
+
+    private void showAlertErr(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Erro");
         alert.setHeaderText(null);
@@ -307,7 +302,7 @@ public class NFSelect extends Application {
         alert.showAndWait();
     }
 
-      private void showAlertOK(String message) {
+    private void showAlertOK(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Confirmação");
         alert.setHeaderText(null);
@@ -332,15 +327,19 @@ public class NFSelect extends Application {
     }
 
     private void loadNFsFromDatabaseWithFilter() {
-        String sql =  
-                "SELECT * FROM NFs WHERE " +
-                "DataHora LIKE ? AND " +
-                "Situacao LIKE ? AND " +
-                "NF LIKE ? AND " +
-                "Nome LIKE ? AND " +
-                "CPF LIKE ? AND " +
-                "Empresa LIKE ? AND " +
-                "PlacaCarro LIKE ?";
+        String sql =
+        "SELECT NFs.DataHora, NFs.Situacao, NFs.NF, NFs.Nome, NFs.CPF, NFs.Empresa, NFs.PlacaCarro, Usuarios.Nome AS porteiroResp " +
+        "FROM NFs " +
+        "JOIN Usuarios ON NFs.porteiroResp = Usuarios.ID " +
+        "WHERE " +
+        "NFs.DataHora LIKE ? AND " +
+        "NFs.Situacao LIKE ? AND " +
+        "NFs.NF LIKE ? AND " +
+        "NFs.Nome LIKE ? AND " +
+        "NFs.CPF LIKE ? AND " +
+        "NFs.Empresa LIKE ? AND " +
+        "NFs.PlacaCarro LIKE ? AND " +
+        "Usuarios.Nome LIKE ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -352,6 +351,7 @@ public class NFSelect extends Application {
             preparedStatement.setString(5, "%" + cpfFilter.getText() + "%");
             preparedStatement.setString(6, "%" + empresaFilter.getText() + "%");
             preparedStatement.setString(7, "%" + placaCarroFilter.getText() + "%");
+            preparedStatement.setString(8, "%" + porteiroRespFilter.getText() + "%");
 
             ResultSet resultSet = preparedStatement.executeQuery();
 

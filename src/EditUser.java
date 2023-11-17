@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.regex.Pattern;
 
 public class EditUser extends Application {
 
@@ -20,7 +21,8 @@ public class EditUser extends Application {
     private User selectedUser;
     private TextField nomeField;
     private PasswordField senhaField;
-  
+
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -60,11 +62,9 @@ public class EditUser extends Application {
                 @Override
                 protected void updateItem(String senha, boolean empty) {
                     super.updateItem(senha, empty);
-
                     if (senha == null || empty) {
                         setText(null);
                     } else {
-                        // Exibe 5 asteriscos
                         setText("*****");
                     }
                 }
@@ -76,24 +76,32 @@ public class EditUser extends Application {
             @Override
             protected void updateItem(Integer tipo, boolean empty) {
                 super.updateItem(tipo, empty);
-        
+                
                 if (tipo == null || empty) {
                     setText(null);
-                } else if (tipo == 1) {
-                    setText("Administrador");
-                } else if (tipo == 2) {
-                    setText("Porteiro");
+                } else {
+                    try {
+                        App.UserType[] values = App.UserType.values();
+                        App.UserType perm = null;
+                        for (App.UserType value : values) {
+                            if (value.ordinal() + 1 == tipo) {
+                                perm = value;
+                                break;
+                            }
+                        }
+                        if (perm != null) {
+                            int nextIndex = (perm.ordinal()) % values.length;
+                            App.UserType nextType = values[nextIndex];
+                            setText(nextType.name());
+                        } else {
+                            setText("Tipo desconhecido");
+                        }
+                    } catch (IllegalArgumentException e) {
+                        setText("Tipo desconhecido");
+                    }
                 }
             }
         });
-        
-        
-                
-                
-        
-        
-        
-        
 
         nomeField = new TextField();
         nomeField.setPromptText("Nome");
@@ -101,13 +109,31 @@ public class EditUser extends Application {
         senhaField = new PasswordField();
         senhaField.setPromptText("Senha");
 
+        
         Button confirmarButton = new Button("Confirmar");
-        confirmarButton.setOnAction(e -> atualizarUsuario());
-
+        confirmarButton.setOnAction(e -> {
+            if(!isValidPassword(senhaField.getText())){
+                showAlert("A senha deve conter pelo menos 6 caracteres, incluindo maiúsculas, minúsculas e números.");
+            } else if (!isValidInput(nomeField.getText(), senhaField.getText())) {
+                showAlert("Nome e senha não podem ser vazios.");
+            } else
+                atualizarUsuario();
+        });
+           
         Button alterarButton = new Button("Alterar");
         alterarButton.setOnAction(e -> alterarUsuario());
 
-        vbox.getChildren().addAll(titleLabel, userTable, nomeField, senhaField, alterarButton, confirmarButton);
+        
+        Button voltarButton = new Button("Voltar");
+        voltarButton.setOnAction(e -> {
+            primaryStage.close();
+        });
+        
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER);
+        buttonBox.getChildren().addAll(alterarButton, confirmarButton);
+        
+        vbox.getChildren().addAll(titleLabel, userTable, nomeField, senhaField, buttonBox, voltarButton);
 
         Scene scene = new Scene(vbox, 500, 400);
         primaryStage.setScene(scene);
@@ -156,11 +182,7 @@ public class EditUser extends Application {
 
             atualizarUsuarioNoBanco(usuario, novoNome, novaSenha);
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Edição de Usuário");
-            alert.setHeaderText(null);
-            alert.setContentText("Usuário editado com sucesso!");
-            alert.showAndWait();
+           showAlert("Usuário editado com sucesso!");
 
             nomeField.clear();
             senhaField.clear();
@@ -184,5 +206,25 @@ public class EditUser extends Application {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private static boolean isValidPassword(String password) {
+        // A senha deve ter pelo menos 6 caracteres, incluindo maiúsculas, minúsculas e números
+        return password.length() >= 6 && Pattern.compile("[a-z]").matcher(password).find()
+                && Pattern.compile("[a-z]").matcher(password).find()
+                && Pattern.compile("[A-Z]").matcher(password).find()
+                && Pattern.compile("[0-9]").matcher(password).find();
+    }
+
+    private boolean isValidInput(String nome, String senha) {
+        return !nome.isEmpty() && !senha.isEmpty();
+    }
+
+    private static void showAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Edição de Usuário");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

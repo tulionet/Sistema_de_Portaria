@@ -36,10 +36,13 @@ public class VisitorRegister extends Application {
         Button cadastrarButton = new Button("Cadastrar");
         cadastrarButton.setOnAction(e -> cadastrarVisitante());
 
-        VBox layout = new VBox(20, nomeLabel, nomeField, cpfLabel, cpfField, empresaLabel, empresaField, cadastrarButton);
+        Button voltarButton = new Button("Voltar");
+        voltarButton.setOnAction(e -> stage.close());
+
+        VBox layout = new VBox(20, nomeLabel, nomeField, cpfLabel, cpfField, empresaLabel, empresaField, cadastrarButton, voltarButton);
         layout.setPadding(new Insets(20));
 
-        Scene scene = new Scene(layout, 400, 300);
+        Scene scene = new Scene(layout, 400, 350);
         stage.setScene(scene);
         stage.show();
     }
@@ -55,7 +58,7 @@ public class VisitorRegister extends Application {
         }
 
         if (!isValidCPF(cpf)) {
-            showAlert("CPF inválido. Certifique-se de que tenha 11 dígitos numéricos.");
+            showAlert("CPF inválido. Certifique-se de que tenha 11 dígitos.");
             return;
         }
 

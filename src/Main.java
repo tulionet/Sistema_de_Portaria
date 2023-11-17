@@ -8,11 +8,12 @@ import javafx.geometry.Pos;
 
 public class Main extends Application {
 
-    private App.UserType tipo;
+    App.UserType tipo;
     User user;
 
-    public Main(User user) {
+    public Main(User user, App.UserType tipo) {
         this.user = user;
+        this.tipo = tipo;
     }
 
     public static void main(String[] args) {
@@ -51,13 +52,13 @@ public class Main extends Application {
 
         // Tela de notas fiscais
         nfButton.setOnAction(e -> {
-            NFSelect nfSelect = new NFSelect(user.getId());
+            NFSelect nfSelect = new NFSelect(user);
             nfSelect.start(new Stage());
 
         });
         // Tela de Visitantes
         visitorButton.setOnAction(e -> {
-            VisitorSelect visitorSelect = new VisitorSelect();
+            VisitorSelect visitorSelect = new VisitorSelect(user);
             visitorSelect.start(new Stage());
 
         });

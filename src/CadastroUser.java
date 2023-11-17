@@ -37,11 +37,16 @@ public class CadastroUser extends Application {
         PasswordField confirmSenhaField = new PasswordField();
         confirmSenhaField.setPromptText("Confirmar Senha");
 
+        ComboBox<App.UserType> tipoAcessoComboBox = new ComboBox<>();
+        tipoAcessoComboBox.getItems().addAll(App.UserType.values());
+        tipoAcessoComboBox.setValue(App.UserType.PORTEIRO);
+
+
         Button voltarButton = new Button("Voltar");
         Button cadastrarButton = new Button("Cadastrar");
 
         HBox buttonBox = new HBox(10);
-        buttonBox.setAlignment(Pos.CENTER_LEFT);
+        buttonBox.setAlignment(Pos.CENTER);
         buttonBox.getChildren().addAll(voltarButton, cadastrarButton);
 
         cadastrarButton.setOnAction(e -> {
@@ -57,9 +62,10 @@ public class CadastroUser extends Application {
             } else if (!senha.equals(confirmSenha)) {
                 showAlert("As senhas não coincidem.");
             } else {
-                if (cadastrarUsuario(nome, usuario, senha)) {
+                App.UserType tipoAcessoSelecionado = tipoAcessoComboBox.getValue();
+                if (cadastrarUsuario(nome, usuario, senha, tipoAcessoSelecionado)) {
                     showAlert("Usuário cadastrado com sucesso!");
-                    // Limpa os campos de entrada para que o usuário possa cadastrar outro usuário
+
                     nomeField.clear();
                     usuarioField.clear();
                     senhaField.clear();
@@ -74,7 +80,7 @@ public class CadastroUser extends Application {
             stage.close();
         });
 
-        vbox.getChildren().addAll(titleLabel, nomeField, usuarioField, senhaField, confirmSenhaField, buttonBox);
+        vbox.getChildren().addAll(titleLabel, nomeField, usuarioField, senhaField, confirmSenhaField, tipoAcessoComboBox, buttonBox);
 
         Scene scene = new Scene(vbox, 300, 300);
         stage.setScene(scene);
@@ -88,25 +94,27 @@ public class CadastroUser extends Application {
                 && Pattern.compile("[0-9]").matcher(password).find();
     }
 
-    private static boolean cadastrarUsuario(String nome, String usuario, String senha) {
-        String sql = "INSERT INTO Usuarios (Nome, Usuario, Senha) VALUES (?, ?, ?)";
+    private static boolean cadastrarUsuario(String nome, String usuario, String senha, App.UserType tipoAcesso) {
+    String sql = "INSERT INTO Usuarios (Nome, Usuario, Senha, Tipo) VALUES (?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
 
-            preparedStatement.setString(1, nome);
-            preparedStatement.setString(2, usuario);
-            preparedStatement.setString(3, senha);
+        preparedStatement.setString(1, nome);
+        preparedStatement.setString(2, usuario);
+        preparedStatement.setString(3, senha);
+        preparedStatement.setInt(4, tipoAcesso.ordinal() + 1);
 
-            int rowsAffected = preparedStatement.executeUpdate();
-            return rowsAffected > 0;
+        int rowsAffected = preparedStatement.executeUpdate();
+        return rowsAffected > 0;
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            showAlert("Erro ao cadastrar o usuário: " + e.getMessage());
-            return false;
-        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+        showAlert("Erro ao cadastrar o usuário: " + e.getMessage());
+        return false;
     }
+}
+
 
     private static void showAlert(String message) {
         Alert alert = new Alert(AlertType.INFORMATION);

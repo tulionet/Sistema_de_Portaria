@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "VisitorAlter",
+            "request": "launch",
+            "mainClass": "VisitorAlter",
+            "projectName": "Portaria_65f7aabe"
+        },
+        {
+            "type": "java",
+            "name": "EditUser",
+            "request": "launch",
+            "mainClass": "EditUser",
+            "projectName": "Portaria_65f7aabe"
+        },
+        {
+            "type": "java",
             "name": "Main",
             "request": "launch",
             "mainClass": "Main",

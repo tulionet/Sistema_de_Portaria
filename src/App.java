@@ -14,9 +14,10 @@ import javafx.geometry.Pos;
 public class App extends Application {
     // Tipos de usuário
     public enum UserType {
-        ADMINISTRADOR, PORTEIRO
-    }
+        ADMINISTRADOR, PORTEIRO;
 
+
+    }
     private UserType userType;
     private User user; 
 
@@ -59,7 +60,7 @@ public class App extends Application {
                     // case 3: Proximos Valores
                     default:setUserType(UserType.PORTEIRO); break;
                 }
-                Main main = new Main(user);
+                Main main = new Main(user, userType);
                 Stage mainStage = new Stage();
                 main.start(mainStage);
                 primaryStage.close();
@@ -113,15 +114,6 @@ public class App extends Application {
 
     private void setUserType(UserType userType) {
         this.userType = userType;
-    }
-
-    public UserType getUserType() {
-        return userType;
-    }
-
-    public User getUser(){
-        return this.user;
-        
     }
 }
 
