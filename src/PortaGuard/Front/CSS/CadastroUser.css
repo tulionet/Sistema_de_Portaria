@@ -1,0 +1,13 @@
+.text-input {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #000000;
+}
+
+.button:hover {
+    -fx-background-color: #457b85;
+}
+
+.table-cell {
+    -fx-text-fill: black;
+}
+
